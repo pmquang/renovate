@@ -7,7 +7,7 @@ images:
 - name: nginx
   repo: "nginx"
   # renovate: datasource=docker packageName=nginx versioning=docker
-  tag: "1.25.2"
+  tag: "1.29.2"
 
 # Case 3: helm datasourceTemplate (regex #4)
 # renovate: registryUrl=https://prometheus-community.github.io/helm-charts depName=kube-state-metrics
