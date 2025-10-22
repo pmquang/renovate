@@ -1,0 +1,160 @@
+// how to use depName value in renovate bot configuration
+// for any value from platforms.yml file
+//   depname = `images.*.name` field value
+// for other like Dockerfile/** with default format like `FROM ghcr.io/helmfile/helmfile:v0.169.2`
+//   depName = ghcr.io/helmfile/helmfile (for image ghcr.io/helmfile/helmfile:v0.169.2)
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  // Limit number of supporting syntax
+  "enabledManagers": ["helmfile", "dockerfile", "terraform", "regex", "helmv3"],
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 5,
+
+  // Split PRs by update type per dependency
+  "separateMinorPatch": true,
+  "separateMultipleMajor": true,
+
+  "packageRules": [
+    // We group all non Dockerfile update change to 1 pr for easy automation patch update
+    {
+      "matchUpdateTypes": ["patch"],
+      "labels": ["renovate-patch-update"]
+    },
+    // We group all non Dockerfile update change to 1 pr for easy automation minor update 
+    {
+      "matchUpdateTypes": ["minor"],
+      "labels": ["renovate-minor-update"]
+    },
+    // We group all non Dockerfile update change to 1 pr for easy automation major update
+    {
+      "matchUpdateTypes": ["major"],
+      "labels": ["renovate-major-update"]
+    },
+    // We group all helm patch to 1 pr
+    {
+      "matchDatasources": ["helm"],
+      "matchUpdateTypes": ["patch"],
+      "labels": ["renovate-helm-update"]
+    },
+    // Disable updates for specific dependencies (#3)
+    {
+      "matchPackageNames": [],
+      "enabled": false
+    },
+    // Add some information for pr 
+    {
+      "matchSourceUrls": [
+        "https://github.com/**"
+      ],
+      "prBodyDefinitions": {
+        "OpenSSF": "[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/{{sourceRepo}}/badge)](https://securityscorecards.dev/viewer/?uri=github.com/{{sourceRepo}})"
+      },
+      "prBodyColumns": [
+        "Package",
+        "Type",
+        "Update",
+        "Change",
+        "Pending",
+        "OpenSSF"
+      ]
+    },
+    // We only want to make pr for patch only
+    {
+      "enabled": false,
+      "matchDatasources": [
+        "docker",
+        "go",
+        "golang-version",
+        "python-version",
+        "pypi",
+        "github-tags",
+        "helm"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ]
+    },
+    // Some applications are safe for minor+patch version upgrade
+    // with any package outside platform.yml file, need to use full docker registry instead
+    {
+      "enabled": true,
+      "matchDepNames": [
+        "nginx",
+        "ghcr.io/helmfile/helmfile",
+        "alpine",
+        "trivy",
+        "golang",
+        "beyla",
+        "cloudsploit",
+        "aws-k8s-cni",
+        "prometheus",
+        "prometheus-statsd-exporter",
+        "prometheus-postgres-exporter",
+        "kube-state-metrics",
+        "noqcks/xeol"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    // Some application we want separate pr for patching which not directly managed by devops
+    {
+      "enabled": true,
+      "matchDepNames": [
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+    },
+    // Rest application safe for patch upgrade only
+    {
+      "enabled": true,
+      "matchUpdateTypes": [
+        "patch"
+      ]
+    }
+  ],
+  // This is for our custom format file platform.yaml and custom syntax from Dockerfile
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^platforms.yml$"],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "[^\t+]repo:\\s+(?<depName>.*?)\n+\\s+tag:\\s+\"(?<currentValue>.*)\""
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^platforms.yml$"],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "[^\t+]- name:\\s+(?<depName>.*?)\\n+\\s+repo: \"?.+\"?\\n+\\s+# renovate: datasource=(?<datasource>[a-z-]+?)\\s+packageName=(?<packageName>.+?)\\s+versioning=(?<versioning>[a-z-]+?)?\\s+tag:\\s+\"(?<currentValue>.*)\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update _VERSION variables in Dockerfiles",
+      "fileMatch": ["^Dockerfiles/.*/Dockerfile.*", "^Dockerfiles/.*/Dockerfile"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?)(?: depName=(?<depName>.+?))? packageName=(?<packageName>.+?)(?: versioning=(?<versioning>[a-z-]+?))?\\s(?:ENV|ARG) .+?_VERSION=(?<currentValue>.+?)\\s"
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^platforms.yml$"],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "# renovate: registryUrl=(?<registryUrl>.*)\\s+depName=(?<depName>.+?)\n+\\s+helmRepo:\\s+.*\n+\\s+helmTag:\\s+\"(?<currentValue>.*)\""
+      ],
+      "datasourceTemplate": "helm"
+    },
+  ]
+}

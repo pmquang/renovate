@@ -1,0 +1,15 @@
+# Case 1: docker datasourceTemplate (regex #1)
+repo: ghcr.io/helmfile/helmfile
+tag: "v0.169.2"
+
+# Case 2: comment có datasource/packageName/versioning (regex #2)
+images:
+- name: nginx
+  repo: "nginx"
+  # renovate: datasource=docker packageName=nginx versioning=docker
+  tag: "1.25.2"
+
+# Case 3: helm datasourceTemplate (regex #4)
+# renovate: registryUrl=https://prometheus-community.github.io/helm-charts depName=kube-state-metrics
+helmRepo: prometheus-community
+helmTag: "5.15.0"
