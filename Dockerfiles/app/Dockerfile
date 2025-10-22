@@ -1,5 +1,5 @@
 # renovate: datasource=docker packageName=alpine versioning=docker
-ARG ALPINE_VERSION=3.18.0
+ARG ALPINE_VERSION=3.18.12
 FROM alpine:${ALPINE_VERSION}
 
 # renovate: datasource=github-tags depName=helm/helm packageName=helm/helm
